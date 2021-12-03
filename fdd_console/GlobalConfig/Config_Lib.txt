@@ -5,16 +5,13 @@ Library           Collections
 Library           OperatingSystem
 Library           String
 Library           RequestsLibrary
-Library           HttpLibrary.HTTP
 Library           JSONLibrary
 Library           SSHLibrary
 Library           DateTime
 Library           yaml
 Library           JMeterLib
 Library           JsonValidator
-Library           JiraRobot
 Library           SeleniumLibrary
-Library           FDDConsole
 Variables         Config_Variable.yaml
 Resource          Config_API.txt
 Resource          Config_Jira.txt
