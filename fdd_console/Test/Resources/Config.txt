@@ -1,0 +1,33 @@
+*** Settings ***
+Documentation     Common Configuration file that can be used across all suites
+Resource          ../../GlobalConfig/Config_Lib.txt
+Variables         ../DataInputs/CommonInputData.yaml
+Variables         ../DataInputs/CommonConfig.yaml
+
+*** Keywords ***
+Multiple SSH Login
+    [Arguments]    ${NumberOfTerminals}
+    [Documentation]    Keyword to Login Multiple SSH Session
+    : FOR    ${Index}    IN RANGE    0    ${NumberOfTerminals}
+    \    SSH Login and Verification
+    \    ${Indexvalue}=    Get Connection    index=True
+    \    Run Keyword If    ${Indexvalue}==${NumberOfTerminals}+1    Exit For Loop
+
+SSH Login and Verification
+    [Documentation]    Keyword to Login and also to Verify the Session
+    ${SessionIndex}=    Open Connection    ${VMDetails.HostIP}    port=${VMDetails.HostPort}
+    Wait Until Session Loads
+    : FOR    ${Index}    IN RANGE    0    ${Iteration}*5
+    \    ${LoginStatus}=    Run keyword and Return Status    Login    ${VMDetails.HostUsername}    ${VMDetails.HostPassword}    delay=3 secs
+    \    Comment    Run Keyword If    \    Should Contain    ${LoginDetails}    ${VMVerification.HostPageDetails}
+    \    Run Keyword If    '${LoginStatus}' == 'True'    Exit For Loop
+    \    Run Keyword Unless    '${LoginStatus}' == 'True'    Wait Until Session Loads
+    Run Keyword If    '${LoginStatus}' == 'False'    Fail    SSHException: Timeout opening channel
+
+Wait Until Session Loads
+    [Documentation]    Keyword to Wait for the Session to load
+    Sleep    5s    # Waits until the session loads
+
+global_variable_settings
+    [Documentation]    To assign global variables so that can be used over across suites
+    Set Global Variable    ${Iteration}    5

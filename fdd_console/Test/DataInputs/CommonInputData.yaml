@@ -1,0 +1,4 @@
+VMVerification:
+    HostPageDetails: Welcome to Ubuntu
+    DockerContainerDetails: CONTAINER ID
+    Login: Last login
