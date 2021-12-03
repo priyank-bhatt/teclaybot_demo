@@ -5,21 +5,14 @@ import time
 from configparser import ConfigParser
 
 configur = ConfigParser()
-configur.read('config.ini')
-#FDD_application = configur.get('Application', 'fdd_console')
-#Stream_folder = configur.get('Streams', 'framerate_streams')
+configur.read('fdd_console\GlobalConfig\config.ini')
+FDD_application = configur.get('Application', 'fdd_console')
+Stream_folder = configur.get('Streams', 'framerate_streams')
 
-#load_button = configur.get('FDD_Buttons', 'load_button')
-#start_button = configur.get('FDD_Buttons', 'start_button')
-#framerate_button = configur.get('FDD_Buttons', 'framerate_button')
-#mode_button = configur.get('FDD_Buttons', 'playback_mode_button')
-
-FDD_application = 'D:\PQ_Automation\scripts\FDD_Console.exe'
-Stream_folder = 'D:\PQ_Automation\win_automation\Streams'
-load_button = 'Screenshots\load.png'
-start_button = 'Screenshots\start_analysis.png'
-framerate_button = 'Screenshots\framerate.png'
-mode_button = 'Screenshots\playback_mode.png'
+load_button = configur.get('FDD_Buttons', 'load_button')
+start_button = configur.get('FDD_Buttons', 'start_button')
+framerate_button = configur.get('FDD_Buttons', 'framerate_button')
+mode_button = configur.get('FDD_Buttons', 'playback_mode_button')
 
 time.sleep(4)
 
@@ -36,9 +29,9 @@ pyautogui.hotkey("win", "up")
 time.sleep(2)
 
 # Locate load button, click it and add stream folder
-b = pyautogui.locateOnScreen(load_button)
+b = pyautogui.locateCenterOnScreen(load_button)
 time.sleep(1)
-pyautogui.click(b[0]+b[2]/2, b[1]+b[3]/2)
+pyautogui.click(b[0], b[1])
 time.sleep(2)
 pyautogui.typewrite(Stream_folder)
 pyautogui.hotkey("enter")
@@ -47,24 +40,24 @@ pyautogui.hotkey("enter")
 time.sleep(2)
 
 # Locate framerate tab and set to 23.976 and locate playback mode tab adn set to file-based
-f = pyautogui.locateOnScreen(framerate_button)
+f = pyautogui.locateCenterOnScreen(framerate_button)
 time.sleep(1)
-pyautogui.click(f[0]+f[2]/2, f[1]+40)
+pyautogui.click(f[0], f[1]+25)
 time.sleep(2)
-pyautogui.click(f[0]+f[2]/2, f[1]+65)
+pyautogui.click(f[0], f[1]+48)
 time.sleep(2)
 
-m = pyautogui.locateOnScreen(mode_button)
+m = pyautogui.locateCenterOnScreen(mode_button)
 time.sleep(1)
-pyautogui.click(m[0]+m[2]/2, m[1]+40)
+pyautogui.click(m[0], m[1]+25)
 time.sleep(2)
-pyautogui.click(m[0]+m[2]/2, m[1]+65)
+pyautogui.click(m[0], m[1]+48)
 time.sleep(2)
 
 # Locate the start ananlysis button and click to start analysis
-b = pyautogui.locateOnScreen(start_button)
+b = pyautogui.locateCenterOnScreen(start_button)
 time.sleep(1)
-pyautogui.click(b[0]+b[2]/2, b[1]+b[3]/2)
+pyautogui.click(b[0], b[1])
 time.sleep(10)
 pyautogui.hotkey('enter')
 time.sleep(150)
