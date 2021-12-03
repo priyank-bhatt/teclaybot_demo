@@ -10,3 +10,4 @@ Resource          ../Resources/Config.txt
 FDD test
     [Documentation]    Demo test for FDD console application
     Start Process    python3    ../../GlobalConfig/FDDConsole.py
+    ${result}=    Wait For Process
