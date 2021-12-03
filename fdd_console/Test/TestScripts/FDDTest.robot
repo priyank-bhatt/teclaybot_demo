@@ -9,4 +9,4 @@ Resource          ../Resources/Config.txt
 *** Test Cases ***
 FDD test
     [Documentation]    Demo test for FDD console application
-    Start Process    python    ../FDDConsole.py
+    Start Process    python    ../../GlobalConfig/FDDConsole.py
