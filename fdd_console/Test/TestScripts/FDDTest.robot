@@ -7,6 +7,6 @@ Test Teardown     Run Keyword    Close All Connections    # Closes all Terminals
 Resource          ../Resources/Config.txt
 
 *** Test Cases ***
-CLI Login
+FDD test
     [Documentation]    Demo test for FDD console application
     [Setup]    Run Process    python    ../FDDConsole.py
