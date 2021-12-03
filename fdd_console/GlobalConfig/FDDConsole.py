@@ -6,13 +6,20 @@ from configparser import ConfigParser
 
 configur = ConfigParser()
 configur.read('config.ini')
-FDD_application = configur.get('Application', 'fdd_console')
-Stream_folder = configur.get('Streams', 'framerate_streams')
+#FDD_application = configur.get('Application', 'fdd_console')
+#Stream_folder = configur.get('Streams', 'framerate_streams')
 
-load_button = configur.get('FDD_Buttons', 'load_button')
-start_button = configur.get('FDD_Buttons', 'start_button')
-framerate_button = configur.get('FDD_Buttons', 'framerate_button')
-mode_button = configur.get('FDD_Buttons', 'playback_mode_button')
+#load_button = configur.get('FDD_Buttons', 'load_button')
+#start_button = configur.get('FDD_Buttons', 'start_button')
+#framerate_button = configur.get('FDD_Buttons', 'framerate_button')
+#mode_button = configur.get('FDD_Buttons', 'playback_mode_button')
+
+FDD_application = 'D:\PQ_Automation\scripts\FDD_Console.exe'
+Stream_folder = 'D:\PQ_Automation\win_automation\Streams'
+load_button = 'Screenshots\load.png'
+start_button = 'Screenshots\start_analysis.png'
+framerate_button = 'Screenshots\framerate.png'
+mode_button = 'Screenshots\playback_mode.png'
 
 time.sleep(4)
 
