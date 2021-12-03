@@ -1,0 +1,326 @@
+*** Settings ***
+Documentation     Common configuration File for UI related fuctionalities
+Resource          Config_Lib.txt
+
+*** Keywords ***
+Toggle Check Box
+    [Arguments]    ${Action}    ${CheckBoxMenuLocation}    ${CheckBoxKey}
+    [Documentation]    Toggles the check box
+    ${CheckBoxEnabled}=    Get Element Attribute    ${CheckBoxMenuLocation.${CheckBoxKey}}    aria-checked
+    Run Keyword If    "${CheckBoxEnabled}"=="false"    Click Element    ${CheckBoxMenuLocation.${CheckBoxKey}}
+
+Long Press Action
+    [Arguments]    ${Action}    ${LocatorElements}    ${Key}    ${ListItemNumber}
+    [Documentation]    Long press on element
+    Switch To Context    ${Native}
+    Wait Until Element Is Visible    ${LocatorElements.${Key}}${ListItemNumber}
+    Long Press    ${LocatorElements.${Key}}${ListItemNumber}
+    Switch To Context    ${Webview}
+
+Double Tap Action
+    [Arguments]    ${Action}    ${LocatorElements}    ${Key}    ${ListItemNumber}
+    [Documentation]    Double tap on element
+    Wait Until Element Is Visible    ${LocatorElements.${Key}}${ListItemNumber}
+    Click Element    ${LocatorElements.${Key}}${ListItemNumber}
+    Click Element    ${LocatorElements.${Key}}${ListItemNumber}
+Left Swipe
+    [Arguments]    ${Action}    ${LocatorValue}    ${StartXOffset}    ${StartYOffset}
+    [Documentation]    Left swipe action
+    Switch To Context    ${native}
+    Wait Until Element Is Visible    ${LocatorValue}
+    ${PointerLocation}=    Get Element Location    ${LocatorValue}
+    ${PointerValues}=    Get Dictionary Values    ${PointerLocation}
+    ${StartXLocation}=    Evaluate    ${PointerValues[0]}-${StartXOffset}
+    ${StartYLocation}=    Evaluate    ${PointerValues[1]}+${StartYOffset}
+    ${XOffset}=    Evaluate    ${PointerValues[0]}-${StartXLocation}
+    ${YOffset}=    Evaluate    ${StartYLocation}-${StartYLocation}
+    Swipe    ${PointerValues[0]}    ${PointerValues[1]}    ${XOffset}    ${YOffset}
+    Switch To Context    ${webview}
+
+Right Swipe
+    [Arguments]    ${Action}    ${LocatorValue}    ${StartXOffset}    ${StartYOffset}
+    [Documentation]    Right swipe action
+    Switch To Context    ${native}
+    Wait Until Element Is Visible    ${LocatorValue}
+    ${PointerLocation}=    Get Element Location    ${LocatorValue}
+    ${PointerValues}=    Get Dictionary Values    ${PointerLocation}
+    ${StartXLocation}=    Evaluate    ${PointerValues[0]}+${StartXOffset}
+    ${StartYLocation}=    Evaluate    ${PointerValues[1]}+${StartYOffset}
+    ${XOffset}=    Evaluate    ${StartXLocation}-${PointerValues[0]}
+    ${YOffset}=    Evaluate    ${StartYLocation}-${StartYLocation}
+    Swipe    ${PointerValues[0]}    ${PointerValues[1]}    ${XOffset}    ${YOffset}
+    Switch To Context    ${webview}
+
+Scroll Menu Details
+    [Arguments]    ${Action}    ${LocatorElements}    ${StartLocation}    ${EndLocation}
+    [Documentation]    scroll action
+    Wait Until Element Is Visible    ${LocatorElements.${StartLocation}}
+    Scroll Down    ${LocatorElements.${EndLocation}}
+Press Element
+    [Arguments]    ${Action}    ${LocatorElements}    ${Key}
+    [Documentation]    Common keyword to Press the Buttons
+    Wait Until Element Is Visible    ${LocatorElements.${Key}}
+    Click Element    ${LocatorElements.${Key}}
+
+Verify Element
+    [Arguments]    ${Action}    ${LocatorElements}    ${Key}
+    [Documentation]    Common keyword to Verify the Buttons
+    Wait Until Element Is Visible    ${LocatorElements.${Key}}
+
+Adding Input Value
+    [Arguments]    ${Action}    ${LocatorElements}    ${Key}    ${InputDataLocationYaml}    ${KeyYaml}
+    [Documentation]    Common Keyword to give input data
+    Wait Until Element Is Visible    ${LocatorElements.${Key}}
+    Input Text    ${LocatorElements.${Key}}    ${InputDataLocationYaml.${KeyYaml}}${Node}${Index}
+
+Input Value Field Length Verification
+    [Arguments]    ${Action}    ${LocatorElements}    ${Key}    ${InputDataLocation}    ${ValidLength}
+    [Documentation]    Common keyword to verify the input filed maximum length limit supported
+    Wait Until Element Is Visible    ${LocatorElements.${Key}}
+    ${Length}=    Get Element Attribute    ${LocatorElements.${Key}}    maxlength
+    ${MaxLength}=    Convert To Integer    ${Length}
+    Should Be Equal    ${InputDataLocation.${ValidLength}}    ${MaxLength}
+    ${InvalidLength}=    Evaluate    ${InputDataLocation.${ValidLength}}+1
+    ${InvalidInputValue}=    Generate Random String    ${InvalidLength}    [LETTERS][NUMBERS]
+    ${Status}=    Run Keyword And Return Status    Input Text    ${LocatorElements.${Key}}    ${InvalidInputValue}
+    Run Keyword If    "${Status}"=="True"    Fail
+Wait For App Page Element
+    [Arguments]    ${RetryKeyword}    @{KeywordArg}
+    [Documentation]    Keyword is used to verify whether element is visible or not
+    : FOR    ${Index}    IN RANGE    1    ${AppPageRetry}
+    \    Wait for App Rendering
+    \    ${AppPageStatus}=    Run Keyword And Return Status    ${RetryKeyword}    @{KeywordArg}
+    \    Run Keyword If    "${AppPageStatus}"=="True"    Exit For Loop
+Login With Valid Credentials
+    [Documentation]    Keyword is used to Login into application with valid credentials
+    Input Username    ${ValidUserName}
+    Input Password    ${ValidPassword}
+    Submit Credentials
+
+Login Application
+    [Documentation]    Opens the application, change the context and login page verification
+    Login Page Verification
+    Submit Credentials
+    Wait For App Page Element    Page Should Not Contain Loader    ${LoadingInfoMsg}
+    Verify Element    AlertSideMenu    ${LocatorElementsAlerts}    alert_side_menu
+
+Input Username
+    [Arguments]    ${Username}
+    [Documentation]    Input Username to the app
+    Input Text    ${LocatorElementsGeneral.user_name}    ${Username}
+
+Input Password
+    [Arguments]    ${Password}
+    [Documentation]    Input Password to the app
+    Input Text    ${LocatorElementsGeneral.password}    ${Password}
+
+Submit Credentials
+    [Documentation]    click on the Submit button
+    Wait For App Page Rendering
+
+Login Page Verification
+    [Documentation]    To verify whether login page loads properly and log in icon is present
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Login Page Verification For Mobile
+    Run Keyword If    "${Node}"=="browser"    Login Page Verification For Browser
+
+App Page Verification
+    [Arguments]    ${LocatorElements}    ${Key}
+    [Documentation]    Verifies the login page and home page of the app.
+    Wait Until Element Is Visible    ${LocatorElements.${Key} }    timeout=15s
+
+Clicking Nth Element
+    [Arguments]    ${Action}    ${LocatorElements}    ${Key}    ${ListItemNumber}
+    [Documentation]    Tap on nth elements present in the list
+    Wait Until Element Is Visible    ${LocatorElements.${Key}}${ListItemNumber}
+    Click Element    ${LocatorElements.${Key}}${ListItemNumber}
+
+Verify Nth Element
+    [Arguments]    ${Action}    ${LocatorElements}    ${Key}    ${ListItemNumber}
+    [Documentation]    Verify on nth elements present in the list
+    Wait For App Page Element    Wait Until Element Is Visible    ${LocatorElements.${Key}}${ListItemNumber}
+
+Scroll On List
+    [Arguments]    ${Action}    ${LocatorElements}    ${Key}    ${StartLocationItemNumber}    ${EndLocationItemNumber}
+    [Documentation]    Scroll on elements present in a list
+    Wait Until Element Is Visible    ${LocatorElements.${Key}}${StartLocationItemNumber}
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Scroll Menu Details    ${LocatorElements.${Key}}${EndLocationItemNumber}
+    Run Keyword If    "${Node}"=="browser" and "${Action}"=="ScrollDown"    Selenium2Library.Mouse Down    ${LocatorElements.${Key}}${EndLocationItemNumber}
+    Run Keyword If    "${Node}"=="browser" and "${Action}"=="ScrollUp"    Selenium2Library.Mouse Up    ${LocatorElements.${Key}}${EndLocationItemNumber}
+Set Element Id
+    [Arguments]    ${LocatorElements}    ${Key1}    ${InputDataLocation}    ${Key2}
+    [Documentation]    Keyword which wraps around the input value for the dictionary
+    Set Global Variable    ${InputValue}    ${${InputDataLocation}${Index}.${Key2}}
+    ${InputData}=    Convert To String    ${InputValue}
+    ${InputElementLocation} =    Replace String    ${LocatorElements.${Key1}}    InputData    ${InputData}
+    Set Global Variable    ${InputElementLocation}
+
+Drop Down Category Options Verification
+    [Arguments]    ${Action}    ${LocatorElements}    ${SelectKey}    ${OptionKey}    ${InputDataLocation}    ${CategoryLength}
+    ...    ${Options}
+    [Documentation]    Keyword to verify all the available drop down category options
+    Wait Until Element Is Visible    ${LocatorElements.${SelectKey}}
+    Click Element    ${LocatorElements.${SelectKey}}
+    ${DropDownOptionsLength}=    Evaluate    ${${InputDataLocation}.${CategoryLength}}+1
+    : FOR    ${Index}    IN RANGE    1    ${DropDownOptionsLength}
+    \    Set Global Variable    ${InputValue}    ${${InputDataLocation}.${Options}${Index}}
+    \    ${InputData}=    Convert To String    ${InputValue}
+    \    ${InputElementLocation} =    Replace String    ${LocatorElements.${OptionKey}}    InputData    ${InputData}
+    \    Page Should Contain Element    ${InputElementLocation}
+
+Filter Options Verification
+    [Arguments]    ${Tab}    ${LocatorElements}    ${Key}    ${InputDataLocation}    ${CategoryLength}    ${Options}
+    [Documentation]    keyword to verify the available filter options
+    : FOR    ${Index}    IN RANGE    1    ${${InputDataLocation}.${CategoryLength}}
+    \    Set Global Variable    ${InputValue}    ${Tab}${${InputDataLocation}.${Options}_${Index}}
+    \    ${InputData}=    Convert To String    ${InputValue}
+    \    ${InputElementLocation} =    Replace String    ${LocatorElements.${Key}}    InputData    ${InputData}
+    \    Page Should Contain Element    ${InputElementLocation}
+
+Set Element Id List
+    [Arguments]    ${LocatorElements}    ${Key1}    ${InputDataLocation}    ${Key2}
+    [Documentation]    Keyword which wraps around the input value for the dictionary
+    Set Global Variable    ${InputValue}    ${${InputDataLocation}.${Key2}}
+    ${InputData}=    Convert To String    ${InputValue}
+    ${InputElementLocation} =    Replace String    ${LocatorElements.${Key1}}    InputData    ${InputData}
+    Set Global Variable    ${InputDataElementLocation}    ${InputElementLocation}
+
+Input Text Data Verification
+    [Arguments]    ${LocatorElements}    ${Key}    ${Key1}    ${InputData}
+    [Documentation]    Keyword to verify the reflected text data
+    Wait Until Element Is Visible    ${LocatorElements.${Key}}
+    Input Text    ${LocatorElements.${Key}}    ${InputData}
+    Get Element Attribute    ${LocatorElements.${Key1}}    ng-reflect-model
+    Should Be Equal    ${InputData}    ${ReflectedTextValue}
+
+Enable PopUp
+    [Arguments]    ${LocatorElements}    ${PopupKey}
+    ${Status}=    Run Keyword And Return Status    Wait Until Element Is Visible    ${LocatorElements.${PopupKey}_${Node}}
+    Run Keyword If    "${Status}"=="True"    Click Element    ${LocatorElements.${PopupKey}_${Node}}
+Search Assets Details Verification
+    [Arguments]    ${Action}    ${LocatorElements}    ${SearchBarKey}    ${SearchIconKey}    ${SearchListKey}    ${SearchDataYAML}
+    ...    ${SearchTitleYAML}
+    [Documentation]    Keyword is used to verify the Assets search results
+    Run Keyword If    "${Action}"=="ToggleListView"    Press Element    MapButton    ${LocatorElements}    map_button
+    Wait for App Rendering
+    Verify Element    SearchBar    ${LocatorElements}    ${SearchBarKey}
+    Input Text    ${LocatorElements.${SearchBarKey}}    ${SearchDataYAML}
+    Wait For App Page Element    Page Should Not Contain Loader    ${LoadingInfoMsg}
+    Press Element    SearchIcon    ${LocatorElements}    ${SearchIconKey}
+    Wait for App Rendering
+    Run Keyword If    "${Action}"=="ToggleListView"    Press Element    ListButton    ${LocatorElements}    list_button
+    Wait for App Rendering
+    Verify Nth Element    ListDetails    ${LocatorElements}    ${SearchListKey}    0
+    Wait for App Rendering
+    Wait for App Rendering
+    ${TextInfo}=    Get Text    ${LocatorElements.${SearchListKey}}0
+    ${MatchesString}=    Get Regexp Matches    ${TextInfo}    ${SearchTitleYAML}
+    Should Be Equal    ${SearchTitleYAML}    ${MatchesString[0]}
+
+Vertical SwipeAction
+    [Arguments]    ${Action}
+    [Documentation]    Vertical swipe from one percent of the screen to another percent, for an optional duration.
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Switch To Context    ${Native}
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Swipe By Percent    50    50    50    80
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Switch To Context    ${Webview}
+    Run Keyword If    "${Node}"=="browser"    Drag    500    500    500    800
+    Wait for App Rendering
+Page Should Contain Text
+    [Arguments]    ${MsgInfo}
+    [Documentation]    Verifies that current page contains "Text"
+    ${MsgInfo}=    Convert To String    ${MsgInfo}
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    AppiumLibrary.Page Should Contain Text    ${MsgInfo}
+    Run Keyword If    "${Node}"=="browser"    Wait Until Page Contains    ${MsgInfo}
+
+Get Element Attribute
+    [Arguments]    ${ElementLocator}    ${AttributeInfo}
+    [Documentation]    Get the element attribute using given attribute: eg, name, value,...
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Get Element Attribute For Mobile    ${ElementLocator}    ${AttributeInfo}
+    Run Keyword If    "${Node}"=="browser"    Get Element Attribute For Browser    ${ElementLocator}    ${AttributeInfo}
+
+Get Element Attribute For Browser
+    [Arguments]    ${ElementLocator}    ${AttributeInfo}
+    [Documentation]    Get the element attribute using given attribute: eg, name, value,...(Browser)
+    ${ReflectedTextValue}=    Selenium2Library.Get Element Attribute    ${ElementLocator}@${AttributeInfo}
+    Set Global Variable    ${ReflectedTextValue}
+
+Get Element Attribute For Mobile
+    [Arguments]    ${ElementLocator}    ${AttributeInfo}
+    [Documentation]    Get the element attribute using given attribute: eg, name, value,...(Mobile)
+    ${ReflectedTextValue}=    AppiumLibrary.Get Element Attribute    ${ElementLocator}    ${AttributeInfo}
+    Set Global Variable    ${ReflectedTextValue}
+
+Clear Text
+    [Arguments]    ${ClearTextLocator}
+    [Documentation]    Keyword is used to clears the text field
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    AppiumLibrary.Clear Text    ${ClearTextLocator}
+    Run Keyword If    "${Node}"=="browser"    Clear Element Text    ${ClearTextLocator}
+
+Toggle Views
+    [Arguments]    ${Action}    ${LocatorElements}    ${MapKey}    ${ListKey}
+    [Documentation]    Toggling between list & map views
+    Wait For App Page Element    Page Should Not Contain Loader    ${LoadingInfoMsg}
+    Press Element    MapButton    ${LocatorElements}    ${MapKey}
+    Wait For App Page Element    Page Should Not Contain Loader    ${LoadingInfoMsg}
+    Press Element    ListButton    ${LocatorElements}    ${ListKey}
+
+Page Should Not Contain Loader
+    [Arguments]    ${LoadingInfoMsg}
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Page Should Not Contain Text    ${LoadingInfoMsg}
+    Run Keyword If    "${Node}"=="browser"    Page Should Not Contain    ${LoadingInfoMsg}
+Empty Search Results Verification
+    [Arguments]    ${Action}    ${LocatorElements}    ${Key}    ${Tab}
+    [Documentation]    Verifying empty search results in contractors, tools & alerts tabs.
+    Press Element    Action    ${LocatorElements}    ${Key}
+    Wait For App Page Element    Page Should Not Contain Loader    ${LoadingInfoMsg}
+    Wait Until Page Contains    No results (${Tab}) found
+
+Placeholder Value Verification
+    [Arguments]    ${Action}    ${ElementLocator}    ${AttributeInfo}    ${ExceptedValue}
+    [Documentation]    Keyword is used to verify the placeholder text field values
+    Get Element Attribute    ${ElementLocator}    ${AttributeInfo}
+    Should Be Equal    ${ReflectedTextValue}    ${ExceptedValue}
+
+Element Status Verification
+    [Arguments]    ${Action}    ${ElementLocator}    ${AttributeInfo}    ${ExceptedStatus}
+    [Documentation]    Keyword is used to verify the element status(Active/Inactive/Link)
+    Get Element Attribute    ${ElementLocator}    ${AttributeInfo}
+    Should Contain    ${ReflectedTextValue}    ${ExceptedStatus}
+
+Text Tranform Verification
+    [Arguments]    ${Action}    ${LocatorElements}    ${Key}    ${ActualText}
+    [Documentation]    Keyword is used to verify the text transform property
+    ${ReflectedText}=    Get Text    ${LocatorElements.${Key}}
+    ${LocatorValue}=    Remove String    ${LocatorElements.${Key}}    id=
+    ${TextTransform}=    Execute Javascript    return document.defaultView.getComputedStyle(document.getElementById("${LocatorValue}"),null)['text-transform']
+    ${ReflectedTextInfo}=    Convert To Uppercase    ${ReflectedText}
+    Run Keyword If    "${TextTransform}"=="uppercase"    Set Global Variable    ${ReflectedText}    ${ReflectedTextInfo}
+    ${ActualText}=    Convert To String    ${ActualText}
+    Should Be Equal    ${ReflectedText}    ${ActualText}
+
+Zoom Browser Window
+    [Arguments]    ${ZoomPercentage}
+    [Documentation]    Keyword is used to zoom in/out of browser windows based on zoom percentage level
+    Execute Javascript    document.body.style.zoom=${ZoomPercentage}
+
+Scroll Page Details
+    [Arguments]    ${Action}    ${LocatorElements}    ${Key}
+    [Documentation]    Keyword is used to scroll the page
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Scroll Down    ${LocatorElements.${Key}}
+    Run Keyword If    "${Node}"=="browser" and "${Action}"=="ScrollDown"    Selenium2Library.Mouse Down    ${LocatorElements.${Key}}
+    Run Keyword If    "${Node}"=="browser" and "${Action}"=="ScrollUp"    Selenium2Library.Mouse Up    ${LocatorElements.${Key}}
+
+Get Text Data verification
+    [Arguments]    ${Action}    ${Locator}    ${ActualText}
+    [Documentation]    Keyword is used to verify the actual text data to reflected text data
+    ${ReflectedText}=    Get Text    ${Locator}
+    Run Keyword If    "${ActualText}"=="${EMPTY}"    Should Be Empty    ${ReflectedText}
+    Run Keyword If    "${ActualText}"!="${EMPTY}"    Should Contain    ${ReflectedText}    ${ActualText}
+
+Value Should Be Integer
+    [Arguments]    ${Locator}    ${GrepValue}
+    [Documentation]    Keyword is used to verify wheather a value is an integer
+    Wait Until Element Is Visible    ${Locator}
+    ${ReflectedText}=    Get Text    ${Locator}
+    ${ReflectedText}=    Remove String Using Regexp    ${ReflectedText}    ${GrepValue}
+    ${IntegerValue}=    Convert To Integer    ${ReflectedText}
+    Should Be Equal As Integers    ${ReflectedText}    ${IntegerValue}

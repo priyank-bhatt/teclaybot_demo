@@ -1,0 +1,82 @@
+*** Settings ***
+Documentation     Common API related functionality keywords
+Resource          Config_Lib.txt
+
+*** Keywords ***
+TokenGeneration
+    [Arguments]    ${Username}    ${Password}    ${TenantId}
+    [Documentation]    Keyword is used to genaerate the token.UserInput-{Username,password,TenantId}
+    Create Session    UserToken    ${ServerIP}
+    &{HeadersUserToken}=    Create Dictionary    Content-Type=application/json; charset=utf-8
+    &{UserTokenPayLoad}=    Create Dictionary    username=${Username}    password=${Password}    project=${TenantId}
+    ${UserTokenResponse}=    Post Request    UserToken    ${IdentityManagementAPI.TokenGeneration}    data=${UserTokenPayLoad}    headers=${HeadersUserToken}
+    Set Global Variable    ${UserTokenStatusCode}    ${UserTokenResponse.status_code}
+    ${AccessToken}=    Get Value From Json    ${UserTokenResponse.json()}    $..id
+    Set Global Variable    ${AccessToken}    ${AccessToken[0]}
+    Set Global Variable    ${TokenResponse}    ${UserTokenResponse}
+    sleep    1s
+
+RBACListVerification
+    [Arguments]    ${ListAPI}
+    [Documentation]    Get List verification for RBAC scenarios
+    &{Headers}    Create Dictionary    Content-Type=application/json; charset=utf-8    Authorization=Bearer ${AccessToken}
+    Create Session    ServerIP    ${ServerIp}
+    sleep    3s
+    ${ReqResponse}=    RequestsLibrary.Get Request    ServerIP    /${ListAPI}    headers=${Headers}
+    Set Global Variable    ${ReqResponse}
+    ${ResponseStatusCode}    Convert To String    ${ReqResponse.status_code}
+    Set Global Variable    ${ResponseStatusCode}
+
+RBACDeleteVerification
+    [Arguments]    ${DeleteAPI}    ${DeleteInputKey}    ${DeleteInputValue}
+    [Documentation]    Delete data verification for RBAC scenarios
+    Create Session    DeletionApi    ${ServerIP}
+    &{DeleteData}=    Create Dictionary    ${DeleteInputKey}=${DeleteInputValue}
+    &{Headers}    Create Dictionary    Content-Type=application/json; charset=utf-8    Authorization=Bearer ${AccessToken}
+    ${ReqResponse}=    Delete Request    DeletionApi    /${DeleteAPI}    data=${DeleteData}    headers=${Headers}
+    Set Global Variable    ${ReqResponse}
+    ${ResponseStatusCode}=    Convert To String    ${ReqResponse.status_code}
+    Set Global Variable    ${ResponseStatusCode}
+
+APIGetRequest
+    [Arguments]    ${GetAPI}
+    [Documentation]    Get the API response
+    &{Headers}    Create Dictionary    Content-Type=application/json; charset=utf-8    Authorization=Bearer ${AccessToken}
+    Create Session    List    ${ServerIp}
+    ${ReqResponse}    RequestsLibrary.Get    List    /${GetAPI}    headers=${Headers}
+    Set Global Variable    ${ReqResponse}
+    ${ResponseStatusCode}    Convert To String    ${ReqResponse.status_code}
+    Set Global Variable    ${ResponseStatusCode}
+
+APIPostReq
+    [Arguments]    ${PostAPI}    ${JsonInput}
+    [Documentation]    Post request
+    ${JsonObJ}=    Load JSON From File    ${JsonInput}
+    Create Session    ServerIp    ${ServerIp}
+    &{Headers}    Create Dictionary    Content-Type=application/json; charset=utf-8    Authorization=Bearer ${AccessToken}
+    ${ReqResponse}    Post Request    ServerIp    /${PostAPI}    data=${JsonObj}    headers=${Headers}
+    Set Global Variable    ${ReqResponse}
+    ${ResponseStatusCode}    Convert To String    ${ReqResponse.status_code}
+    Set Global Variable    ${ResponseStatusCode}
+
+APIDeleteRequest
+    [Arguments]    ${NumberofInputs}    ${DeleteAPI}    ${DeleteData}
+    [Documentation]    Delete req based on sending delete data in API URL
+    :FOR    ${Index}    IN RANGE    0    ${NumberofInputs}
+    \    ${Index}    Evaluate    ${Index}+1
+    \    Set Global Variable    ${Index}
+    \    Create Session    Deletion    ${ServerIP}
+    \    &{Headers}    Create Dictionary    Content-Type=application/json; charset=utf-8    Authorization=Bearer ${AccessToken}
+    \    ${Response}=    Delete Request    Deletion    /${DeleteAPI}/${DeleteData}    headers=${Headers}
+    \    Set Global Variable    ${ResponseStatusCode}    ${Response.status_code}
+
+APIDeleteReqInput
+    [Arguments]    ${DeleteAPI}    ${DeleteInputKey}    ${DeleteInputValue}
+    [Documentation]    Delete Request based on gived input json data. UserInput-{Delete API,DeleteInputKey,DeleteInputValue}
+    Create Session    DeletionApi    ${ServerIP}
+    &{DeleteData}=    Create Dictionary    ${DeleteInputKey}=${DeleteInputValue}
+    &{Headers}    Create Dictionary    Content-Type=application/json; charset=utf-8    Authorization=Bearer ${AccessToken}
+    ${ReqResponse}=    Delete Request    DeletionApi    /${DeleteAPI}    data=${DeleteData}    headers=${Headers}
+    Set Global Variable    ${ReqResponse}
+    ${ResponseStatusCode}=    Convert To String    ${ReqResponse.status_code}
+    Set Global Variable    ${ResponseStatusCode}

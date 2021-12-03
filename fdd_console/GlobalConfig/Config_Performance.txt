@@ -1,0 +1,11 @@
+*** Settings ***
+Documentation     Common configuration File to integrate jira
+Resource          Config_Lib.txt
+
+*** Keywords ***
+Run Performance TestCase
+    [Arguments]    ${SystemOS}    ${JmeterPath}    ${JmeterFile}
+    [Documentation]    Test case to run the jmeter scripts
+    Run Keyword And Ignore Error    Remove Files    ../PerformanceLogs/output    ../PerformanceLogs/output.html
+    Run Keyword If    "${SystemOS}"=="Windows"    Run Jmeter Analyse Jtl Convert To Html    ${JmeterPath}/apache-jmeter-5.1.1/bin/jmeter.bat    ../JmeterScripts/${JmeterFile}    ../PerformanceLogs/output
+    Run Keyword If    "${SystemOS}"=="Linux"    Run Jmeter Analyse Jtl Convert To Html    ${JmeterPath}/apache-jmeter-5.1.1/bin/jmeter.sh    ../JmeterScripts/${JmeterFile}    ../PerformanceLogs/output

@@ -1,0 +1,23 @@
+*** Settings ***
+Documentation     Common Configuration file for all application
+Library           Process
+Library           Collections
+Library           OperatingSystem
+Library           String
+Library           RequestsLibrary
+Library           HttpLibrary.HTTP
+Library           JSONLibrary
+Library           SSHLibrary
+Library           DateTime
+Library           yaml
+Library           JMeterLib
+Library           JsonValidator
+Library           JiraRobot
+Library           SeleniumLibrary
+Variables         Config_Variable.yaml
+Resource          Config_API.txt
+Resource          Config_Jira.txt
+Resource          Config_Mobile_Web_App.txt
+Resource          Config_Performance.txt
+Resource          Config_Server.txt
+Resource          Config_UI.txt

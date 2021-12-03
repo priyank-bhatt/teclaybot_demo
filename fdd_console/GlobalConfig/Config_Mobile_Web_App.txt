@@ -1,0 +1,377 @@
+*** Settings ***
+Documentation     Common Keywords which is used for mobile application(Android/IOS)
+Resource          Config_Lib.txt
+
+*** Keywords ***
+Start Appium Process
+    [Arguments]    ${Port}
+    [Documentation]    Starting Appium Process
+    Run Keyword If    "${Port}"=="${Server1Port}"    Terminate Appium Process    ${Port}
+    Start Process    appium -p ${Port}    shell=true
+    : FOR    ${Index}    IN RANGE    1    ${AppiumNodeRetry}
+    \    Run Process    lsof -n -i:${Port} | grep LISTEN    shell=True    alias=AppiumProcess
+    \    ${StdOut}=    Get Process Result    AppiumProcess    stdout=true
+    \    Run Keyword If    "${StdOut}"!="${EMPTY}"    Exit For Loop
+    \    Sleep    5s
+
+Suite Setup for 1 Device
+    [Documentation]    Keyword to start appium and install app
+    Library Selection
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Suite Setup for Mobile
+    Run Keyword If    "${Node}"=="androidBrowser" or "${Node}"=="iosBrowser"    Suite Setup For MobileBrowser
+
+Suite Setup for 2 Device
+    [Documentation]    Keyword to start appium and install app
+    Suite Setup for 1 Device
+    Start Appium Process    ${Server2Port}
+    Install App in 2 Device
+
+Device Selection
+    [Documentation]    Selecting Particular mobile desired capabilities for appium
+    Run Keyword If    '${Node}'=='android' or '${Node}'=='androidBrowser'    Android Desired Capabilities Parameter
+    Run Keyword If    '${Node}'=='ios' or '${Node}'=='iosBrowser'    iOS Desired Capabilities Parameter
+
+Android Desired Capabilities Parameter
+    [Documentation]    Setting the Android desired capabilities values
+    Get Android Device Name
+    Get Android Platform Version    ${Device1Name}    ${Device2Name}
+
+Get Android Device Name
+    [Documentation]    Getting the connected android mobile device name
+    Run Process    adb devices | grep -v devices | grep device | cut -f 1 | sed 2d    shell=True    alias=Device1Name
+    Run Process    adb devices | grep -v devices | grep device | cut -f 1 | sed 1d    shell=True    alias=Device2Name
+    ${Device1Name}=    Get Process Result    Device1Name    stdout=true
+    ${Device2Name}=    Get Process Result    Device2Name    stdout=true
+    Set Global Variable    ${Device1Name}
+    Set Global Variable    ${Device2Name}
+
+Get Android Platform Version
+    [Arguments]    ${Device1Name}    ${Device2Name}
+    [Documentation]    Getting the connected android mobile device platform version
+    Run Process    adb -s ${Device1Name} shell getprop ro.build.version.release    shell=True    alias=Device1PlatformVersion
+    Run Process    adb -s ${Device2Name} shell getprop ro.build.version.release    shell=True    alias=Device2PlatformVersion
+    ${Device1PlatformVersion}=    Get Process Result    Device1PlatformVersion    stdout=true
+    ${Device2PlatformVersion}=    Get Process Result    Device2PlatformVersion    stdout=true
+    Set Global Variable    ${Device1PlatformVersion}
+    Set Global Variable    ${Device2PlatformVersion}
+
+iOS Desired Capabilities Parameter
+    [Documentation]    Setting the iOS desired capabilities values
+    Get iOS udid
+    Get iOS Platform Version
+    Get iOS Device Name
+
+Get iOS udid
+    [Documentation]    Get iOS Mobile UDID
+    Run Process    idevice_id -l | sed 2d    shell=True    alias=Device1Udid
+    Run Process    idevice_id -l | sed 1d    shell=True    alias=Device2Udid
+    ${Device1Udid}=    Get Process Result    Device1Udid    stdout=true
+    ${Device2Udid}=    Get Process Result    Device2Udid    stdout=true
+    Set Global Variable    ${Device1Udid}
+    Set Global Variable    ${Device2Udid}
+
+Get iOS Platform Version
+    [Documentation]    Getting the connected iOS Platform Version
+    Run Process    ideviceinfo -u ${Device1Udid} | grep ProductVersion | awk '{print $2}'    shell=True    alias=Device1PlatformVersion
+    Run Process    ideviceinfo -u ${Device2Udid} | grep ProductVersion | awk '{print $2}'    shell=True    alias=Device2PlatformVersion
+    ${Device1PlatformVersion}=    Get Process Result    Device1PlatformVersion    stdout=true
+    ${Device2PlatformVersion}=    Get Process Result    Device2PlatformVersion    stdout=true
+    Set Global Variable    ${Device1PlatformVersion}
+    Set Global Variable    ${Device2PlatformVersion}
+
+Get iOS Device Name
+    [Documentation]    Getting the connected iOS mobile device name
+    Run Process    idevicename -u ${Device1Udid}    shell=True    alias=Device1Name
+    Run Process    idevicename -u ${Device2Udid}    shell=True    alias=Device2Name
+    ${Device1Name}=    Get Process Result    Device1Name    stdout=true
+    ${Device2Name}=    Get Process Result    Device2Name    stdout=true
+    Set Global Variable    ${Device1Name}
+    Set Global Variable    ${Device2Name}
+
+Install App in 1 Device
+    ${DeviceCheckingStatusAndroid}=    Run Keyword And Return Status    Should Not Be Empty    ${Device1Name}
+    ${DeviceCheckingStatusiOS}=    Run Keyword And Return Status    Should Not Be Empty    ${Device1Udid}
+    Run Keyword If    '${DeviceCheckingStatusAndroid}'=='True' and '${Node}'=='android'    Install App    ${Device1Name}
+    Run Keyword If    '${DeviceCheckingStatusiOS}'=='True' and '${Node}'=='ios'    Install App    ${Device1Udid}
+
+Install App in 2 Device
+    Install App in 1 Device
+    ${DeviceCheckingStatusAndroid}=    Run Keyword And Return Status    Should Not Be Empty    ${Device2Name}
+    ${DeviceCheckingStatusiOS}=    Run Keyword And Return Status    Should Not Be Empty    ${Device2Udid}
+    Run Keyword If    '${DeviceCheckingStatusAndroid}'=='True'    Install App    ${Device2Name}
+    Run Keyword If    '${DeviceCheckingStatusiOS}'=='True'    Install App    ${Device2Udid}
+
+Install App
+    [Arguments]    ${Device}
+    [Documentation]    Keyword used to install app
+    Run Keyword If    '${Node}'=='android'    Run Process    adb -s ${Device} install '${AndroidAppName}'    shell=True
+    Run Keyword If    '${Node}'=='ios'    Run Process    ideviceinstaller -u ${Device} -i ${iOSAppName}    shell=True
+
+Opening Application
+    [Arguments]    ${ServerUrl}    ${PlatformVersion}    ${DeviceName}    ${Udid}
+    [Documentation]    Opening the mobile application across various platforms
+    Run Keyword If    '${Node}'=='android'    Open App In Android Device    ${ServerUrl}    ${PlatformVersion}    ${DeviceName}
+    Run Keyword If    '${Node}'=='ios'    Open App In Ios Device    ${ServerUrl}    ${PlatformVersion}    ${DeviceName}    ${Udid}
+
+Open App In Android Device
+    [Arguments]    ${ServerUrl}    ${PlatformVersion}    ${DeviceName}
+    [Documentation]    Opening the app in Android platform
+    ${ConnectedDeviceNumber}=    Open Application    ${ServerUrl}    platformName=${Node}    platformVersion=${PlatformVersion}    deviceName=${DeviceName}    appPackage=${AppPackageName}
+    ...    appActivity=${AndroidAppActivity}    nativeWebScreenshot=true    autoGrantPermissions=true    newCommandTimeout=100
+    Set Global Variable    ${Mobile${ConnectedDeviceNumber}}    ${ConnectedDeviceNumber}
+
+Open App In Ios Device
+    [Arguments]    ${ServerUrl}    ${PlatformVersion}    ${DeviceName}    ${udid}
+    [Documentation]    Opening the app in ios platform
+    ${ConnectedDeviceNumber}=    Open Application    ${ServerUrl}    platformName=${Node}    platformVersion=${PlatformVersion}    deviceName=${DeviceName}    app=${iOSAppName}
+    ...    udid=${Udid}    locationServicesAuthorized=true    bundleId=${AppPackageName}    startIWDP=true    useNewWDA=true    webkitDebugProxyPort=${WebkitPort${NumberOfDevices}}
+    ...    newCommandTimeout=120s
+    Set Global Variable    ${Mobile${ConnectedDeviceNumber}}    ${ConnectedDeviceNumber}
+
+Test Tear Down
+    [Documentation]    Tear down for each test case
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Test Tear Down For App
+    Run Keyword If    "${Node}"=="browser"    Close All Browsers
+    Run Keyword If    "${Node}"=="androidBrowser" or "${Node}"=="iosBrowser"    Test Tear Down For App
+
+Terminate Appium Process
+    [Arguments]    ${Port}
+    [Documentation]    Killing the Appium process
+    Run Process    killall node    shell=True
+    : FOR    ${Index}    IN RANGE    1    ${AppiumNodeKill}
+    \    Run Process    lsof -n -i:${Port} | grep LISTEN    shell=True    alias=AppiumTerminateProcess
+    \    ${StdOut}=    Get Process Result    AppiumTerminateProcess    stdout=true
+    \    Run Keyword If    "${StdOut}"=="${EMPTY}"    Exit For Loop
+    \    Sleep    5s
+
+Suite Tear Down for 1 Device
+    [Documentation]    Suite tear down process
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Suite Tear Down for App
+    Run Keyword If    "${Node}"=="androidBrowser" or "${Node}"=="iosBrowser"    Suite Tear Down for MobileBrowser
+
+Suite Tear Down for 2 Device
+    [Documentation]    Suite tear down process
+    Suite Tear Down for 1 Device
+    UnInstall App in 2 Device
+    Terminate Appium Process    ${Server2Port}
+
+UnInstall App in 1 Device
+    [Documentation]    Suite tear down process
+    ${DeviceCheckingStatusAndroid}=    Run Keyword And Return Status    Should Not Be Empty    ${Device1Name}
+    ${DeviceCheckingStatusiOS}=    Run Keyword And Return Status    Should Not Be Empty    ${Device1Udid}
+    Run Keyword If    '${DeviceCheckingStatusAndroid}'=='True' and '${Node}'=='android'    Uninstall App    ${Device1Name}
+    Run Keyword If    '${DeviceCheckingStatusiOS}'=='True' and '${Node}'=='ios'    Uninstall App    ${Device1Udid}
+
+UnInstall App in 2 Device
+    [Documentation]    Suite tear down process
+    UnInstall App in 1 Device
+    ${DeviceCheckingStatusAndroid}=    Run Keyword And Return Status    Should Not Be Empty    ${Device2Name}
+    ${DeviceCheckingStatusiOS}=    Run Keyword And Return Status    Should Not Be Empty    ${Device2Udid}
+    Run Keyword If    '${DeviceCheckingStatusAndroid}'=='True' and '${Node}'=='android'    Uninstall App    ${Device2Name}
+    Run Keyword If    '${DeviceCheckingStatusiOS}'=='True' and '${Node}'=='ios'    Uninstall App    ${Device2Udid}
+
+Uninstall App
+    [Arguments]    ${Device}
+    [Documentation]    Uninstalls the app from mobile
+    Run Keyword If    '${Node}'=='android'    Run Process    adb -s ${Device} uninstall '${AppPackageName}'    shell=True
+    Run Keyword If    '${Node}'=='ios'    Run Process    ideviceinstaller -u ${Device} -U ${AppPackageName}    shell=True
+
+Back To Application
+    [Documentation]    Command to execute the back action in mobile
+    Run Keyword If    '${Node}'=='android'    Run Process    adb shell input keyevent 4    shell=True
+
+List Contexts
+    [Documentation]    Lists the view contexts available for the app
+    : FOR    ${Index}    IN RANGE    1    ${WebViewContextRetry}
+    \    ${Contexts}=    Get Contexts
+    \    ${Length}=    Get Length    ${Contexts}
+    \    Run Keyword If    "${Length}">="2"    Exit For Loop
+    \    Sleep    5s
+    ${Native}=    Get From List    ${Contexts}    0
+    ${Webview}=    Get From List    ${Contexts}    -1
+    Set Global Variable    ${Native}
+    Set Global Variable    ${Webview}
+
+Clicking On APP Back Page Button
+    [Arguments]    ${Action}    ${LocatorElements}    ${Key}
+    [Documentation]    Clicking on App Back Page Button
+    [Tags]
+    Click Element    ${LocatorElements.${Key}}
+
+Capture Screenshot
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="androidBrowser"    Capture Page Screenshot    filename=android_screenshot_${counter}.png
+    Run Keyword If    "${Node}"=="ios" or "${Node}"=="iosBrowser"    Capture Page Screenshot    filename=ios_screenshot_${counter}.png
+    Run Keyword If    "${Node}"=="browser"    Capture Page Screenshot    filename=browser_screenshot_${counter}.png
+    ${counter}=    Evaluate    ${counter}+1
+    Set Global Variable    ${counter}
+
+Check Box Status
+    [Arguments]    ${Action}    ${CheckBoxMenuLocation}    ${CheckBoxKey}
+    [Documentation]    Checks the current status of the check box
+    ${CheckBoxEnabled}=    Get Element Attribute    ${CheckBoxMenuLocation.${CheckBoxKey}}    aria-checked
+    Set Global Variable    ${CheckBoxEnabled}
+
+Recent App Switcher
+    [Arguments]    ${PackageName}
+    [Documentation]    open app from recent tray
+    ${AppRecenterCommand} =    Replace String    ${AndroidAppRestore}    "AppPackageName"    ${PackageName}
+    Run Keyword If    '${Node}'=='android'    Run Process    ${AndroidAppSwitch}    shell=true
+    Run Keyword If    '${Node}'=='android'    Run Process    ${AppRecenterCommand}    shell=true
+
+Remove From Recent Tray
+    [Documentation]    Remove the app from recent tray
+    Device Selection
+    ${DeviceCheckingStatus}=    Run Keyword And Return Status    Should Not Be Empty    ${DeviceName}
+    Run Keyword If    '${Node}'=='android'    Run Process    ${AndroidAppSwitch}    shell=true
+    Run Keyword If    '${Node}'=='android'    Run Process    ${AndroidAppRemove}    shell=true
+
+Press Home Button
+    [Documentation]    Keyword to press home button in Android
+    Run Keyword If    '${Node}'=='android'    Run Process    ${AndroidHomeButton}    shell=true
+
+Toggle Mobile Data And Wifi
+    [Arguments]    ${ConnectionType}    ${ConnectionStatus}    ${DeviceId}
+    [Documentation]    keyword to enable or disable mobile data or wifi
+    Run Keyword If    '${Node}'=='android'    Run Process    adb -s ${DeviceId} shell am broadcast -a io.appium.settings.wifi --es setstatus ${ConnectionStatus}    shell=true
+    sleep    3s    reason=wait till wifi connection is enabled or disabled
+
+Wait for App Rendering
+    Sleep    3s
+
+Performance Time Calculation
+    [Arguments]    ${AppPerformanceTime}    ${PerformanceKeyword}    @{KeywordArg}
+    [Documentation]    Keyword is used to calculate the performance(Time) of the application
+    ${CurrentTime}=    Get Current Date
+    Run Keyword    ${PerformanceKeyword}    @{KeywordArg}
+    ${UpdatedTime}=    Get Current Date
+    ${TotalTimeOfExecution }=    Subtract Date From Date    ${UpdatedTime}    ${CurrentTime}
+    Set Global Variable    ${TotalTimeOfExecution }
+    ${AppPerformanceTime}=    Convert Time    ${AppPerformanceTime}
+    Run Keyword If    "${TotalTimeOfExecution }"<="${AppPerformanceTime}"    log    Performance of the App is as per the requirements
+    ...    ELSE    Fail    msg=Performance of the app is not per desired standards
+
+Device Location Access
+    [Arguments]    ${Action}    ${Device1Name}
+    [Documentation]    Keyword to enable/disable device/GPS location
+    Run Keyword If    "${Node}"=="android" and "${Action}"=="Enable Location"    Run Process    adb -s ${Device1Name} shell settings put secure location_providers_allowed +gps    shell=True
+    Run Keyword If    "${Node}"=="android" and "${Action}"=="Disable Location"    Run Process    adb -s ${Device1Name} shell settings put secure location_providers_allowed -gps    shell=True
+
+Open App without Permission
+    [Documentation]    Keyword to open app without giving app permission
+    Run Keyword If    "${Node}"=="android"    Open Application    ${Server1Url}    platformName=${Node}    platformVersion=${Device1PlatformVersion}    deviceName=${Device1Name}
+    ...    appPackage=${AppPackageName}    appActivity=${AndroidAppActivity}    nativeWebScreenshot=true    newCommandTimeout=100
+    Run Keyword If    "${Node}"=="ios"    Open Application    ${Server1Url}    platformName=${Node}    platformVersion=${Device1PlatformVersion}    deviceName=${Device1Name}
+    ...    app=${iOSAppName}    udid=${Device1Udid}    bundleId=${AppPackageName}    startIWDP=true
+    List Contexts
+
+Library Selection
+    [Documentation]    Keyword is used to select the library based on node selection
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Import Library    AppiumLibrary    run_on_failure=Capture Screenshot
+    Run Keyword If    "${Node}"=="browser"    Import Library    Selenium2Library    run_on_failure=Capture Screenshot
+    Run Keyword If    "${Node}"=="androidBrowser" or "${Node}"=="iosBrowser"    Import Library    AppiumLibrary    run_on_failure=Capture Screenshot
+
+Suite Setup for Mobile
+    [Documentation]    Keyword to start appium and install app
+    Start Appium Process    ${Server1Port}
+    Device Selection
+    Install App in 1 Device
+
+Open App In Browser
+    [Documentation]    Opening the app in Browser
+    Run Keyword If    "${BrowserName}"=="Chrome"    Open Browser in Chrome
+
+Suite Tear Down for App
+    [Documentation]    Keyword is used to unistall the app and terminate the appium process
+    Run Keyword If    '${SUITE_STATUS}'=='FAIL'    Close All Applications
+    UnInstall App in 1 Device
+    Terminate Appium Process    ${Server1Port}
+
+Test Tear Down For App
+    [Documentation]    Tear down for each test case
+    Run Keyword If    "${Node}"=="android"    Portrait
+    Run Keyword If    "${TEST_STATUS}"=="FAIL" and "${Node}"=="ios"    Handle iOS Web Driver Crash
+    Close All Applications
+
+Open Browser in Chrome
+    [Documentation]    Opening app in chrome browser for enabling all the chrome options.
+    ${ChromeOptions}=    Evaluate    sys.modules['selenium.webdriver'].ChromeOptions()    sys, selenium.webdriver
+    ${Preferences}=    Create Dictionary    profile.default_content_setting_values.DefaultGeolocationSetting=1
+    Call Method    ${ChromeOptions}    add_argument    window-size\=1920,1080
+    Call Method    ${ChromeOptions}    add_argument    headless
+    Call Method    ${ChromeOptions}    add_argument    no-sandbox
+    Call Method    ${ChromeOptions}    add_argument    disable-dev-shm-usage
+    Call Method    ${ChromeOptions}    add_experimental_option    prefs    ${Preferences}
+    Call Method    ${ChromeOptions}    add_argument    unlimited-storage
+    Create Webdriver    Chrome    chrome_options=${ChromeOptions}
+    Go To    ${BrowserAppUrl}
+
+Suite Setup For MobileBrowser
+    [Documentation]    Keyword to start appium process
+    Start Appium Process    ${Server1Port}
+    Device Selection
+
+Suite Tear Down for MobileBrowser
+    [Documentation]    Keyword to terminate the appium process
+    Run Keyword If    '${SUITE_STATUS}'=='FAIL'    Close All Applications
+    Terminate Appium Process    ${Server1Port}
+
+Handle iOS Web Driver Crash
+    [Documentation]    Keyword used to handle the web driver crash in iOS
+    ${WebdriverCrashMessage}=    Run Keyword And Return Status    Should Contain    ${TEST_MESSAGE}    xcodebuild failed with code 65
+    Run Keyword If    "${WebdriverCrashMessage}"=="True" and "${DeviceRestart}"<="10"    Reboot iOS Device
+
+Reboot iOS Device
+    [Documentation]    Keyword to restart the iOS device on crash of web driver
+    Run Process    idevicediagnostics restart    shell=true
+    sleep    3s
+    : FOR    ${Index}    IN RANGE    1    10
+    \    ${iDeviceCommandStatus}=    Run Process    ideviceinstaller -l -o list_system    shell=true
+    \    sleep    5s
+    \    ${iPhoneStatus}=    Run Keyword And Return Status    Should Contain    ${iDeviceCommandStatus}    com.apple.camera
+    \    Run Keyword If    "${iPhoneStatus}"=="True"    Exit For Loop
+    ${DeviceRestart}    Evaluate    ${DeviceRestart}+1
+    Set Global Variable    ${DeviceRestart}
+Login Page Verification For Mobile
+    [Documentation]    To verify whether login page loads properly and log in icon is present
+    Opening Application    ${Server1Url}    ${Device1PlatformVersion}    ${Device1Name}    ${Device1Udid}
+    List Contexts
+    Wait for App Rendering
+    Switch To Context    ${Native}
+    ${Status}=    Run Keyword If    "${Node}"=="ios"    Enable PopUp    ${LocatorElementsGeneral}    popup
+    Switch To Context    ${Webview}
+    Wait For App Page Element    Page Should Not Contain Loader    ${LoadingInfoMsg}
+    App Page Verification    ${LocatorElementsGeneral}    login_app
+
+Login Page Verification For Browser
+    [Documentation]    To verify whether login page loads properly and log in icon is present
+    Open App In Browser
+    Wait For App Page Element    Page Should Not Contain Loader    ${LoadingInfoMsg}
+    App Page Verification    ${LocatorElementsGeneral}    login_app
+
+Reopen App From Recent tray
+    [Documentation]    Keyword is used to reopen the app from recent tray(mobile) or minimized window(Browser)
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Press Home Button
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Recent App Switcher    ${AppPackageName}
+    Run Keyword If    "${Node}"=="browser"    Press Combination    Key.Alt    Key.Space    Key.N
+    Run Keyword If    "${Node}"=="browser"    Press Combination    Key.Alt    Key.Tab
+
+Close And Reopen App
+    [Documentation]    Keyword is used to reopen the app based on node selection
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Close Application
+    Run Keyword If    "${Node}"=="android" or "${Node}"=="ios"    Start Appium Process    ${Server1Port}
+    Run Keyword If    "${Node}"=="browser"    Close Browser
+    Login Application
+eload Browser App
+    [Documentation]    Reloads the current browser page
+    Reload Page
+    Wait for App Rendering
+    App Page Verification    ${LocatorElementsGeneral}    login_app
+
+ReopenApp Without Clearing AppData
+    [Documentation]    Close and reopen application without clearing app data
+    Close All Applications
+    Run Keyword If    "${Node}"=="android"    Open Application    ${Server1Url}    platformName=${Node}    platformVersion=${Device1PlatformVersion}    deviceName=${Device1Name}
+    ...    appPackage=${AppPackageName}    appActivity=${AndroidAppActivity}    nativeWebScreenshot=true    autoGrantPermissions=true    newCommandTimeout=100    noReset=true
+    Run Keyword If    "${Node}"=="ios"    Open Application    ${Server1Url}    platformName=${Node}    platformVersion=${Device1PlatformVersion}    deviceName=${Device1Name}
+    ...    app=${iOSAppName}    udid=${Device1Udid}    locationServicesAuthorized=true    bundleId=${AppPackageName}    startIWDP=true    noReset=true
+    Login Screen Verification

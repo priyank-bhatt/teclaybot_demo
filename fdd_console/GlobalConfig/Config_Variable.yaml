@@ -1,0 +1,3 @@
+AppiumNodeRetry: 10    # Number of tries to start the appium node
+AppiumNodeKill: 10    # Number of tries to kill the appium node
+WebViewContextRetry: 10    # Number of tries to verify WebView Context

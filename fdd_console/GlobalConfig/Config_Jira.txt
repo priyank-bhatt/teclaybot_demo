@@ -1,0 +1,11 @@
+*** Settings ***
+Documentation     Common configuration File to integrate jira
+Resource          Config_Lib.txt
+
+*** Keywords ***
+Create New Issue
+    [Arguments]    ${project}    ${summary}    ${description}    ${issuetype}    ${priority}    ${assigntouser}=False
+    ${issuestring}=    Set Variable    {'project': {'key': '${project}'}, 'summary': '${summary}', 'description': '${description}', 'issuetype': {'name': '${issuetype}'}}
+    ${issue}=    Create Issue    ${issuestring}    ${assigntouser}
+    Log    ${issue}
+    [Return]    ${issue}

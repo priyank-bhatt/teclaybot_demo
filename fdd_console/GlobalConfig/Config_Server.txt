@@ -1,0 +1,39 @@
+*** Settings ***
+Documentation     Common Configuration file
+Resource          Config_Lib.txt
+
+*** Keywords ***
+Multiple SSH Login Connection
+    [Arguments]    ${NumberOfTerminals}
+    [Documentation]    Keyword to Login Multiple SSH Session
+    : FOR    ${Index}    IN RANGE    0    ${NumberOfTerminals}
+    \    SSH Login and Verification
+    \    ${Indexvalue}=    Get Connection    index=True
+    \    Run Keyword If    ${Indexvalue}==${NumberOfTerminals}+1    Exit For Loop
+
+SSH Login Verification
+    [Documentation]    Keyword to Login and also to Verify the Session
+    ${SessionIndex}=    Open Connection    ${VMDetails.HostIP}    port=${VMDetails.HostPort}
+    Wait Until Session Loads
+    : FOR    ${Index}    IN RANGE    0    ${Iteration}*5
+    \    ${LoginStatus}=    Run keyword and Return Status    Login    ${VMDetails.HostUsername}    ${VMDetails.HostPassword}    delay=3 secs
+    \    Comment    Run Keyword If    \    Should Contain    ${LoginDetails}    ${VMDetails.HostPageDetails}
+    \    Run Keyword If    '${LoginStatus}' == 'True'    Exit For Loop
+    \    Run Keyword Unless    '${LoginStatus}' == 'True'    Wait Until Session Loads
+    Run Keyword If    '${LoginStatus}' == 'False'    Fail    SSHException: Timeout opening channel
+
+SSH Login with User Specific Server
+    [Arguments]    ${IP}    ${Port}    ${Username}    ${Password}
+    [Documentation]    Keyword to Login and also to Verify the Session
+    ${SessionIndex}=    Open Connection    ${IP}    port=${Port}
+    Wait Until Session Loads
+    : FOR    ${Index}    IN RANGE    0    ${Iteration}*5
+    \    ${LoginStatus}=    Run keyword and Return Status    Login    ${Username}    ${Password}    delay=3 secs
+    \    Run Keyword If    '${LoginStatus}' == 'True'    Exit For Loop
+    \    Run Keyword Unless    '${LoginStatus}' == 'True'    Wait Until Session Loads
+    Run Keyword If    '${LoginStatus}' == 'False'    Fail    SSHException: Timeout opening channel
+
+SSHConnection with Key
+    [Arguments]    ${GatewaySerialNumber}
+    Open Connection    ${${GatewaySerialNumber}Ip}    alias=gateway    port=22
+    ${Output}=    Login With Public Key    root    DataInputs/${GatewaySerialNumber}
